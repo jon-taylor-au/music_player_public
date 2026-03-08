@@ -3,162 +3,999 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Pi Music Player</title>
-
+<title>PiPlayer — Minimalist Hi-Fi Music Player</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=DM+Serif+Display:ital@0;1&display=swap');
 
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0;
-    background: #111;
-    color: #eee;
-}
+  :root {
+    --green: #00c800;
+    --green-dim: #007a00;
+    --green-faint: #003a00;
+    --amber: #dc8c28;
+    --amber-dim: #7a4a0a;
+    --bg: #050905;
+    --bg-panel: #0a0f0a;
+    --border: #1a2e1a;
+    --text: #00c800;
+    --text-dim: #4a7a4a;
+    --text-faint: #1e3a1e;
+  }
 
-header {
-    text-align: center;
-    padding: 80px 20px;
-    background: linear-gradient(180deg,#222,#111);
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-header h1 {
-    font-size: 48px;
-    margin-bottom: 10px;
-}
+  html { scroll-behavior: smooth; }
 
-header p {
-    font-size: 20px;
-    color: #bbb;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
 
-.button {
-    display: inline-block;
-    margin-top: 25px;
-    padding: 12px 24px;
-    background: #ff5500;
-    color: white;
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 clamp(24px, 6vw, 80px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  .logo span {
+    color: var(--amber);
+  }
+
+  nav {
+    display: flex;
+    gap: 32px;
+  }
+
+  nav a {
+    color: var(--text-dim);
     text-decoration: none;
-    border-radius: 6px;
-}
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
 
-section {
-    max-width: 900px;
-    margin: auto;
-    padding: 60px 20px;
-}
+  nav a:hover { color: var(--green); }
 
-.features {
+  /* ── HERO ── */
+  .hero {
+    padding: clamp(60px, 10vw, 120px) clamp(24px, 6vw, 80px);
+    max-width: 1100px;
+    margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-    gap: 30px;
-}
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    min-height: 80vh;
+  }
 
-.feature {
-    background: #1a1a1a;
-    padding: 25px;
-    border-radius: 8px;
-}
+  .hero-text {}
 
-.video-container {
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--amber);
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(42px, 5vw, 68px);
+    line-height: 1.05;
+    color: var(--green);
+    margin-bottom: 32px;
+    font-weight: 400;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .hero-desc {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.9;
+    max-width: 440px;
+    margin-bottom: 40px;
+  }
+
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 4px 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .tag.amber {
+    border-color: var(--amber-dim);
+    color: var(--amber);
+  }
+
+  /* Terminal display mockup */
+  .terminal {
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    padding: 0;
     position: relative;
-    padding-bottom: 56.25%;
-    height: 0;
-}
+    animation: flicker 8s infinite;
+  }
 
-.video-container iframe {
+  @keyframes flicker {
+    0%, 95%, 100% { opacity: 1; }
+    96% { opacity: 0.97; }
+    97% { opacity: 1; }
+    98% { opacity: 0.98; }
+  }
+
+  .terminal-bar {
+    background: var(--green-faint);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .terminal-bar span { color: var(--amber); }
+
+  .terminal-body {
+    padding: 20px 16px;
+    font-size: 13px;
+  }
+
+  .t-row {
+    display: flex;
+    padding: 5px 8px;
+    border-radius: 1px;
+    color: var(--text-dim);
+    gap: 12px;
+  }
+
+  .t-row.selected {
+    background: var(--green-faint);
+    color: var(--green);
+  }
+
+  .t-row.playing {
+    color: var(--amber);
+  }
+
+  .t-row.folder { color: var(--text-dim); }
+
+  .t-icon { width: 14px; flex-shrink: 0; text-align: center; }
+
+  .t-name { flex: 1; }
+
+  .t-meta { color: var(--text-faint); font-size: 11px; }
+
+  .t-row.selected .t-meta { color: var(--green-dim); }
+
+  .terminal-now-playing {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+
+  .tnp-track {
+    color: var(--amber);
+    font-size: 13px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--green-faint);
+    margin-bottom: 6px;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 42%;
+    background: var(--amber);
+    animation: progress-anim 12s linear infinite;
+  }
+
+  @keyframes progress-anim {
+    from { width: 42%; }
+    to { width: 100%; }
+  }
+
+  .tnp-meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── DIVIDER ── */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0 clamp(24px, 6vw, 80px);
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: clamp(48px, 7vw, 96px) clamp(24px, 6vw, 80px);
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 3.5vw, 44px);
+    font-weight: 400;
+    color: var(--green);
+    margin-bottom: 20px;
+    line-height: 1.15;
+  }
+
+  h2 em { color: var(--amber); font-style: italic; }
+
+  /* ── PHILOSOPHY ── */
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .phil-item {
+    background: var(--bg);
+    padding: 32px 28px;
+    transition: background 0.2s;
+  }
+
+  .phil-item:hover { background: var(--bg-panel); }
+
+  .phil-number {
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    margin-bottom: 16px;
+  }
+
+  .phil-title {
+    font-size: 15px;
+    color: var(--green);
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .phil-body {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  /* ── CONTROLS ── */
+  .controls-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 64px;
+    align-items: start;
+    margin-top: 48px;
+  }
+
+  .knob-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .knob {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 2px solid var(--green-dim);
+    background: radial-gradient(circle at 35% 35%, #1a2e1a, #050905);
+    position: relative;
+    box-shadow: 0 0 40px rgba(0,200,0,0.08), inset 0 0 20px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+  }
+
+  .knob::after {
+    content: '';
     position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 16px;
+    background: var(--amber);
+    border-radius: 2px;
+  }
+
+  .knob-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .control-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+
+  .control-item {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .control-item:last-child { border-bottom: none; }
+
+  .control-gesture {
+    padding: 16px 20px;
+    background: var(--bg-panel);
+    color: var(--amber);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+  }
+
+  .control-action {
+    padding: 16px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── FORMATS ── */
+  .formats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .format-item {
+    background: var(--bg);
+    padding: 28px 24px;
+    transition: background 0.2s;
+  }
+
+  .format-item:hover { background: var(--bg-panel); }
+
+  .format-ext {
+    font-size: 22px;
+    color: var(--green);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .format-name {
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .format-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .format-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    margin-top: 10px;
+  }
+
+  .format-badge.lossless {
+    border-color: var(--amber-dim);
+    color: var(--amber);
+  }
+
+  /* ── VIDEO ── */
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 48px;
+  }
+
+  .video-card {
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    overflow: hidden;
+    transition: border-color 0.2s;
+    text-decoration: none;
+    display: block;
+  }
+
+  .video-card:hover { border-color: var(--green-dim); }
+
+  .video-thumb {
+    aspect-ratio: 16/9;
+    background: var(--green-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .video-thumb-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-faint);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .play-icon {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--green-dim);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green-dim);
+    font-size: 18px;
+  }
+
+  /* For real YouTube embeds */
+  .video-thumb iframe {
     width: 100%;
     height: 100%;
-}
+    border: none;
+  }
 
-footer {
-    text-align: center;
-    padding: 40px;
-    color: #777;
-}
+  .video-info {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
 
+  .video-episode {
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .video-title {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .video-card:hover .video-title { color: var(--green); }
+
+  /* Add video CTA */
+  .video-add {
+    border: 1px dashed var(--border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 180px;
+    color: var(--text-faint);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: default;
+  }
+
+  .video-add-icon {
+    font-size: 28px;
+    color: var(--text-faint);
+  }
+
+  /* ── STACK ── */
+  .stack-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .stack-item {
+    background: var(--bg);
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .stack-name {
+    color: var(--amber);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    padding-top: 2px;
+  }
+
+  .stack-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px clamp(24px, 6vw, 80px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-faint);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  footer a {
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+
+  footer a:hover { color: var(--green); }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1.1s step-end infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 800px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 40px;
+      min-height: auto;
+    }
+    .philosophy-grid { grid-template-columns: 1fr; }
+    .controls-layout { grid-template-columns: 1fr; }
+    .formats-grid { grid-template-columns: repeat(2, 1fr); }
+    .video-grid { grid-template-columns: 1fr; }
+    .stack-list { grid-template-columns: 1fr; }
+    nav { display: none; }
+    footer { flex-direction: column; gap: 12px; text-align: center; }
+  }
+
+  /* Fade-in on load */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadein 0.7s ease forwards;
+  }
+
+  @keyframes fadein {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in:nth-child(1) { animation-delay: 0.1s; }
+  .fade-in:nth-child(2) { animation-delay: 0.25s; }
+  .fade-in:nth-child(3) { animation-delay: 0.4s; }
+  .fade-in:nth-child(4) { animation-delay: 0.55s; }
 </style>
 </head>
-
 <body>
 
 <header>
-
-<h1>Pi Music Player</h1>
-
-<p>A minimal, tactile music player built on Raspberry Pi</p>
-
-<a class="button" href="https://github.com/jon-taylor-au/music_player">
-View on GitHub
-</a>
-
+  <div class="logo">Pi<span>Player</span></div>
+  <nav>
+    <a href="#philosophy">Philosophy</a>
+    <a href="#controls">Controls</a>
+    <a href="#formats">Formats</a>
+    <a href="#progress">Progress</a>
+    <a href="#stack">Stack</a>
+  </nav>
 </header>
 
-<section>
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-text">
+    <div class="eyebrow fade-in">Open source project</div>
+    <h1 class="fade-in">A music player that thinks it's <em>hi-fi equipment</em></h1>
+    <p class="hero-desc fade-in">
+      Built on a Raspberry Pi. Controlled by a single knob.
+      No apps, no streaming, no menus. Just your music,
+      the way a dedicated component should play it.
+    </p>
+    <div class="hero-tags fade-in">
+      <span class="tag amber">Raspberry Pi</span>
+      <span class="tag amber">FLAC / MP3</span>
+      <span class="tag">Python + VLC</span>
+      <span class="tag">Rotary Encoder</span>
+      <span class="tag">DAC Output</span>
+      <span class="tag">7" Display</span>
+    </div>
+  </div>
 
-<h2>Demo</h2>
-
-<div class="video-container">
-
-<iframe
-src="https://www.youtube.com/embed/VIDEO_ID"
-frameborder="0"
-allowfullscreen>
-</iframe>
-
+  <!-- Terminal mockup -->
+  <div class="terminal fade-in">
+    <div class="terminal-bar">
+      <span>PIPLAYER</span>
+      <span>▶ PLAYING</span>
+    </div>
+    <div class="terminal-body">
+      <div class="t-row folder">
+        <span class="t-icon">▾</span>
+        <span class="t-name">John Coltrane</span>
+      </div>
+      <div class="t-row folder" style="padding-left:24px">
+        <span class="t-icon">▾</span>
+        <span class="t-name">A Love Supreme (1965)</span>
+      </div>
+      <div class="t-row playing" style="padding-left:40px">
+        <span class="t-icon">♪</span>
+        <span class="t-name">01 - Resolution.flac</span>
+        <span class="t-meta">FLAC</span>
+      </div>
+      <div class="t-row selected" style="padding-left:40px">
+        <span class="t-icon"> </span>
+        <span class="t-name">02 - Pursuance.flac</span>
+        <span class="t-meta">FLAC</span>
+      </div>
+      <div class="t-row" style="padding-left:40px">
+        <span class="t-icon"> </span>
+        <span class="t-name">03 - Psalm.flac</span>
+        <span class="t-meta">FLAC</span>
+      </div>
+      <div class="t-row folder" style="padding-left:24px">
+        <span class="t-icon">▸</span>
+        <span class="t-name">Ballads (1962)</span>
+      </div>
+      <div class="t-row folder">
+        <span class="t-icon">▸</span>
+        <span class="t-name">Miles Davis</span>
+      </div>
+    </div>
+    <div class="terminal-now-playing">
+      <div class="tnp-track">01 – Resolution · A Love Supreme<span class="cursor"></span></div>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <div class="tnp-meta">
+        <span>John Coltrane · 1965</span>
+        <span>2:14 / 7:04</span>
+      </div>
+    </div>
+  </div>
 </div>
 
+<hr class="section-divider">
+
+<!-- PHILOSOPHY -->
+<section id="philosophy">
+  <div class="section-label">Design philosophy</div>
+  <h2>The filesystem <em>is</em> the library</h2>
+
+  <div class="philosophy-grid">
+    <div class="phil-item">
+      <div class="phil-number">01</div>
+      <div class="phil-title">No metadata library</div>
+      <div class="phil-body">Your folder structure is your organisation. No database to build, no tags to fix before playback, no import process. Plug in a drive and play.</div>
+    </div>
+    <div class="phil-item">
+      <div class="phil-number">02</div>
+      <div class="phil-title">One control surface</div>
+      <div class="phil-body">A single rotary encoder does everything. Turn to browse. Press to play. Long press for settings. The interface disappears and the music takes over.</div>
+    </div>
+    <div class="phil-item">
+      <div class="phil-number">03</div>
+      <div class="phil-title">Appliance, not computer</div>
+      <div class="phil-body">Boots straight into the player. No desktop, no OS, no distractions. Closer in spirit to a CD player or network streamer than any software application.</div>
+    </div>
+    <div class="phil-item">
+      <div class="phil-number">04</div>
+      <div class="phil-title">State that remembers</div>
+      <div class="phil-body">Power it off, power it back on. The player resumes exactly where you left it — same position in the browser, same track loaded and ready.</div>
+    </div>
+    <div class="phil-item">
+      <div class="phil-number">05</div>
+      <div class="phil-title">Lossless first</div>
+      <div class="phil-body">FLAC, WAV, AIFF, ALAC — high-resolution formats are first-class citizens. Paired with a quality DAC the output is indistinguishable from dedicated audio hardware.</div>
+    </div>
+    <div class="phil-item">
+      <div class="phil-number">06</div>
+      <div class="phil-title">Open and hackable</div>
+      <div class="phil-body">Every behaviour is configurable in a single settings file. No hidden logic, no cloud dependency, no account required. It's yours to modify completely.</div>
+    </div>
+  </div>
 </section>
 
-<section>
+<hr class="section-divider">
 
-<h2>Features</h2>
+<!-- CONTROLS -->
+<section id="controls">
+  <div class="section-label">How to use it</div>
+  <h2>One knob. <em>Everything.</em></h2>
 
-<div class="features">
+  <div class="controls-layout">
+    <div class="knob-diagram">
+      <div class="knob"></div>
+      <div class="knob-label">Rotary encoder<br>+ push button</div>
+    </div>
 
-<div class="feature">
-<h3>Rotary Control</h3>
-<p>Browse and control music using a tactile rotary encoder.</p>
-</div>
-
-<div class="feature">
-<h3>Queue + Favourites</h3>
-<p>Instantly build playlists and access your favourite albums.</p>
-</div>
-
-<div class="feature">
-<h3>Minimal UI</h3>
-<p>Clean interface designed for small displays.</p>
-</div>
-
-<div class="feature">
-<h3>Hi-Fi Ready</h3>
-<p>Pair with a DAC HAT for audiophile sound quality.</p>
-</div>
-
-</div>
-
+    <ul class="control-list">
+      <li class="control-item">
+        <span class="control-gesture">Turn</span>
+        <span class="control-action">Browse folders and tracks up / down</span>
+      </li>
+      <li class="control-item">
+        <span class="control-gesture">Press</span>
+        <span class="control-action">Play or pause the selected track</span>
+      </li>
+      <li class="control-item">
+        <span class="control-gesture">Double press</span>
+        <span class="control-action">Jump back to the currently playing track in the browser</span>
+      </li>
+      <li class="control-item">
+        <span class="control-gesture">Long press</span>
+        <span class="control-action">Open the settings modal — volume, shuffle, repeat, gapless and more</span>
+      </li>
+      <li class="control-item">
+        <span class="control-gesture">Idle 60s</span>
+        <span class="control-action">Browser automatically returns to the now-playing track</span>
+      </li>
+    </ul>
+  </div>
 </section>
 
-<section>
+<hr class="section-divider">
 
-<h2>Why This Exists</h2>
+<!-- FORMATS -->
+<section id="formats">
+  <div class="section-label">Supported audio formats</div>
+  <h2>High resolution, <em>no compromise</em></h2>
 
-<p>
-Modern music software is overloaded with features.  
-This project explores a different idea: a simple physical interface that makes browsing and playing music enjoyable again.
-</p>
+  <div class="formats-grid">
+    <div class="format-item">
+      <div class="format-ext">.flac</div>
+      <div class="format-name">Free Lossless</div>
+      <div class="format-desc">Open lossless compression. The recommended format for this player.</div>
+      <div class="format-badge lossless">Lossless</div>
+    </div>
+    <div class="format-item">
+      <div class="format-ext">.wav</div>
+      <div class="format-name">Waveform Audio</div>
+      <div class="format-desc">Uncompressed PCM. Zero decode overhead, maximum compatibility.</div>
+      <div class="format-badge lossless">Lossless</div>
+    </div>
+    <div class="format-item">
+      <div class="format-ext">.aiff</div>
+      <div class="format-name">Audio Interchange</div>
+      <div class="format-desc">Apple's uncompressed format. Common in professional audio workflows.</div>
+      <div class="format-badge lossless">Lossless</div>
+    </div>
+    <div class="format-item">
+      <div class="format-ext">.alac</div>
+      <div class="format-name">Apple Lossless</div>
+      <div class="format-desc">Compressed lossless from Apple. Ideal for iTunes-sourced libraries.</div>
+      <div class="format-badge lossless">Lossless</div>
+    </div>
+    <div class="format-item">
+      <div class="format-ext">.mp3</div>
+      <div class="format-name">MPEG Audio</div>
+      <div class="format-desc">The universal lossy format. Fully supported for existing collections.</div>
+      <div class="format-badge">Lossy</div>
+    </div>
+    <div class="format-item">
+      <div class="format-ext">.ogg</div>
+      <div class="format-name">Ogg Vorbis</div>
+      <div class="format-desc">Open lossy compression. Good quality at moderate bitrates.</div>
+      <div class="format-badge">Lossy</div>
+    </div>
+    <div class="format-item" style="grid-column: span 2; background: var(--bg-panel);">
+      <div class="format-ext" style="font-size:14px; color: var(--text-dim)">Audio engine</div>
+      <div class="format-name">VLC via python-vlc</div>
+      <div class="format-desc">All formats are decoded by libVLC — the same engine used in VLC media player. Supports up to 24-bit / 192kHz when paired with a compatible DAC.</div>
+    </div>
+  </div>
+</section>
 
-<p>
-Inspired by classic hi-fi components and tactile hardware interfaces.
-</p>
+<hr class="section-divider">
 
+<!-- VIDEO PROGRESS -->
+<section id="progress">
+  <div class="section-label">Development progress</div>
+  <h2>Building it <em>in public</em></h2>
+
+  <div class="video-grid">
+
+    <!-- 
+      TO ADD A VIDEO: Replace a .video-add block with a .video-card block.
+      
+      Option A — Thumbnail link (opens YouTube):
+      <a class="video-card" href="https://youtu.be/YOUR_VIDEO_ID" target="_blank" rel="noopener">
+        <div class="video-thumb">
+          <img src="https://img.youtube.com/vi/YOUR_VIDEO_ID/mqdefault.jpg" 
+               style="width:100%;height:100%;object-fit:cover;" alt="Episode title">
+        </div>
+        <div class="video-info">
+          <div class="video-episode">EP. 01</div>
+          <div class="video-title">Your video title here</div>
+        </div>
+      </a>
+
+      Option B — Embedded player:
+      <div class="video-card">
+        <div class="video-thumb">
+          <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" 
+                  allowfullscreen></iframe>
+        </div>
+        <div class="video-info">
+          <div class="video-episode">EP. 01</div>
+          <div class="video-title">Your video title here</div>
+        </div>
+      </div>
+    -->
+
+    <div class="video-add">
+      <div class="video-add-icon">+</div>
+      <span>Episode 01 — coming soon</span>
+    </div>
+
+    <div class="video-add">
+      <div class="video-add-icon">+</div>
+      <span>Episode 02 — coming soon</span>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- STACK -->
+<section id="stack">
+  <div class="section-label">Technical stack</div>
+  <h2>Built on <em>proven tools</em></h2>
+
+  <div class="stack-list">
+    <div class="stack-item">
+      <span class="stack-name">Python</span>
+      <span class="stack-desc">Core application logic, event loop, UI orchestration, and all playback control.</span>
+    </div>
+    <div class="stack-item">
+      <span class="stack-name">Pygame</span>
+      <span class="stack-desc">Display rendering and keyboard/encoder input handling at 30 FPS.</span>
+    </div>
+    <div class="stack-item">
+      <span class="stack-name">VLC</span>
+      <span class="stack-desc">Audio engine via python-vlc. Handles all format decoding, gapless transitions, and volume control.</span>
+    </div>
+    <div class="stack-item">
+      <span class="stack-name">Mutagen</span>
+      <span class="stack-desc">Metadata extraction across all formats — ID3, Vorbis comments, and iTunes/MP4 tags.</span>
+    </div>
+    <div class="stack-item">
+      <span class="stack-name">Raspberry Pi</span>
+      <span class="stack-desc">Target hardware. Runs headless with a 7" display, rotary encoder, and external DAC.</span>
+    </div>
+    <div class="stack-item">
+      <span class="stack-name">DAC</span>
+      <span class="stack-desc">External digital-to-analogue converter for high-quality audio output, bypassing the Pi's onboard audio.</span>
+    </div>
+  </div>
 </section>
 
 <footer>
-
-<p>Built by Jon Taylor</p>
-
+  <span>PiPlayer — a dedicated hi-fi music player</span>
+  <span>Built with Python · Powered by VLC · Running on Raspberry Pi</span>
 </footer>
 
 </body>
