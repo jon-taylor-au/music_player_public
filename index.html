@@ -3,1000 +3,1185 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Music Terminal — Minimalist Hi-Fi Music Player</title>
+<title>Music Terminal — Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=DM+Serif+Display:ital@0;1&display=swap');
+/* ============================================================
+   RESET & ROOT
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  :root {
-    --green: #00c800;
-    --green-dim: #007a00;
-    --green-faint: #003a00;
-    --amber: #dc8c28;
-    --amber-dim: #7a4a0a;
-    --bg: #050905;
-    --bg-panel: #0a0f0a;
-    --border: #1a2e1a;
-    --text: #00c800;
-    --text-dim: #4a7a4a;
-    --text-faint: #1e3a1e;
-  }
+:root {
+  --bg:           #0a0a0a;
+  --bg-sidebar:   #111111;
+  --border:       #1a1a1a;
+  --border-mid:   #252525;
+  --green:        #00c800;
+  --green-dim:    #006a00;
+  --amber:        #dc8c28;
+  --amber-dim:    #7a4a10;
+  --amber-bright: #f0a030;
+  --font:         'JetBrains Mono', 'Courier New', monospace;
+  --sidebar-w:    240px;
+  --content-max:  860px;
+}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+::selection {
+  background: var(--amber);
+  color: #000;
+}
 
-  html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  font-size: 14px;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 14px;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar            { width: 7px; height: 7px; }
+::-webkit-scrollbar-track      { background: #050505; }
+::-webkit-scrollbar-thumb      { background: var(--amber-dim); }
+::-webkit-scrollbar-thumb:hover{ background: var(--amber); }
+* { scrollbar-width: thin; scrollbar-color: var(--amber-dim) #050505; }
 
-  /* Scanline overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-    pointer-events: none;
-    z-index: 1000;
-  }
+/* ============================================================
+   BODY & SCANLINES
+   ============================================================ */
+body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: var(--font);
+  font-weight: 400;
+  line-height: 1.75;
+  min-height: 100vh;
+  position: relative;
+}
 
-  /* Vignette */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
-    pointer-events: none;
-    z-index: 999;
-  }
+/* CSS-only scanline texture */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.07) 3px,
+    rgba(0, 0, 0, 0.07) 4px
+  );
+  pointer-events: none;
+  z-index: 9000;
+}
 
-  /* ── HEADER ── */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 0 clamp(24px, 6vw, 80px);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 56px;
-    position: sticky;
+/* ============================================================
+   LINKS
+   ============================================================ */
+a {
+  color: var(--amber);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+  color: var(--amber-bright);
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-product {
+  color: var(--amber);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.sidebar-tagline {
+  color: var(--green-dim);
+  font-size: 0.7rem;
+  margin-top: 5px;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-nav {
+  padding: 12px 0 24px;
+  flex: 1;
+}
+
+.nav-group {
+  padding: 0;
+}
+
+.nav-group + .nav-group {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.nav-group-label {
+  color: var(--green-dim);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 10px 20px 5px;
+}
+
+.nav-link {
+  display: block;
+  color: var(--green-dim);
+  font-size: 0.75rem;
+  padding: 5px 20px;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+  margin-left: -1px; /* compensate for sidebar border */
+}
+
+.nav-link:hover {
+  color: var(--green);
+  text-decoration: none;
+  background: rgba(0, 200, 0, 0.04);
+}
+
+.nav-link.active {
+  color: var(--amber);
+  border-left-color: var(--amber);
+  background: rgba(220, 140, 40, 0.06);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-width: 0;
+}
+
+.content {
+  max-width: var(--content-max);
+  padding: 60px 52px 120px;
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+section {
+  padding-top: 20px;
+  margin-bottom: 72px;
+}
+
+section:first-child {
+  padding-top: 0;
+}
+
+section h2 {
+  color: var(--amber);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-mid);
+}
+
+section h2::before {
+  content: '# ';
+  color: var(--amber-dim);
+  font-weight: 400;
+}
+
+section h3 {
+  color: var(--amber);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-top: 36px;
+  margin-bottom: 12px;
+}
+
+section h3::before {
+  content: '## ';
+  color: var(--amber-dim);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+section p {
+  font-size: 0.84rem;
+  margin-bottom: 14px;
+  color: var(--green);
+  max-width: 680px;
+}
+
+section p:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   LISTS
+   ============================================================ */
+.doc-list {
+  list-style: none;
+  margin: 10px 0 16px;
+  max-width: 680px;
+}
+
+.doc-list li {
+  font-size: 0.84rem;
+  padding: 3px 0 3px 20px;
+  position: relative;
+  color: var(--green);
+}
+
+.doc-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--amber-dim);
+  font-size: 0.8rem;
+}
+
+.doc-list.bullet li::before {
+  content: '·';
+  color: var(--green-dim);
+  font-size: 1.1rem;
+  top: 1px;
+}
+
+/* ============================================================
+   DEFINITION / MENU TABLES
+   ============================================================ */
+.def-table {
+  width: 100%;
+  max-width: 700px;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.82rem;
+}
+
+.def-table tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.def-table tr:last-child {
+  border-bottom: none;
+}
+
+.def-table td {
+  padding: 9px 12px;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.def-table td:first-child {
+  color: var(--amber);
+  white-space: nowrap;
+  padding-right: 24px;
+  min-width: 140px;
+  font-weight: 500;
+}
+
+.def-table td:last-child {
+  color: var(--green);
+}
+
+/* ============================================================
+   CALLOUT BOXES
+   ============================================================ */
+.callout {
+  border: 1px solid var(--border-mid);
+  padding: 16px 20px;
+  margin: 20px 0;
+  max-width: 680px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--green);
+}
+
+.callout.tip {
+  border-left: 3px solid var(--amber);
+  background: rgba(220, 140, 40, 0.04);
+}
+
+.callout.note {
+  border-left: 3px solid var(--green-dim);
+  background: rgba(0, 200, 0, 0.03);
+}
+
+.callout .callout-label {
+  color: var(--amber);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.callout.note .callout-label {
+  color: var(--green-dim);
+}
+
+/* ============================================================
+   CODE / INLINE CODE
+   ============================================================ */
+code {
+  color: var(--amber);
+  background: rgba(220, 140, 40, 0.08);
+  padding: 1px 5px;
+  font-family: var(--font);
+  font-size: 0.9em;
+}
+
+pre {
+  background: #080808;
+  border: 1px solid var(--border-mid);
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-size: 0.8rem;
+  color: var(--green);
+  overflow-x: auto;
+  max-width: 680px;
+  line-height: 1.8;
+}
+
+/* ============================================================
+   FOLDER STRUCTURE DIAGRAM
+   ============================================================ */
+.folder-tree {
+  background: #080808;
+  border: 1px solid var(--border-mid);
+  padding: 18px 22px;
+  margin: 16px 0;
+  font-size: 0.8rem;
+  color: var(--green);
+  max-width: 480px;
+  line-height: 1.9;
+}
+
+.folder-tree .dir  { color: var(--amber); }
+.folder-tree .file { color: var(--green-dim); }
+
+/* ============================================================
+   KNOB CONTROL TABLE
+   ============================================================ */
+.control-block {
+  max-width: 680px;
+  margin: 16px 0;
+}
+
+.control-row {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.control-row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.control-gesture {
+  color: var(--amber);
+  font-weight: 500;
+  min-width: 190px;
+  padding: 9px 16px 9px 0;
+  flex-shrink: 0;
+}
+
+.control-action {
+  color: var(--green);
+  padding: 9px 0;
+}
+
+/* ============================================================
+   MOBILE TOP BAR
+   ============================================================ */
+.topbar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  padding: 0 16px;
+  z-index: 200;
+}
+
+.topbar-title {
+  color: var(--amber);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.hamburger {
+  background: none;
+  border: 1px solid var(--border-mid);
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+
+.hamburger:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 99;
+}
+
+.sidebar-overlay.visible {
+  display: block;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 760px) {
+  .topbar  { display: flex; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s;
     top: 0;
-    background: var(--bg);
-    z-index: 100;
-  }
-
-  .logo {
-    font-size: 13px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--green);
-  }
-
-  .logo span {
-    color: var(--amber);
-  }
-
-  nav {
-    display: flex;
-    gap: 32px;
-  }
-
-  nav a {
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    transition: color 0.2s;
-  }
-
-  nav a:hover { color: var(--green); }
-
-  /* ── HERO ── */
-  .hero {
-    padding: clamp(60px, 10vw, 120px) clamp(24px, 6vw, 80px);
-    max-width: 1100px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    align-items: center;
-    min-height: 80vh;
-  }
-
-  .hero-text {}
-
-  .eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .eyebrow::before {
-    content: '';
-    display: block;
-    width: 24px;
-    height: 1px;
-    background: var(--amber);
-  }
-
-  h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(42px, 5vw, 68px);
-    line-height: 1.05;
-    color: var(--green);
-    margin-bottom: 32px;
-    font-weight: 400;
-  }
-
-  h1 em {
-    font-style: italic;
-    color: var(--amber);
-  }
-
-  .hero-desc {
-    color: var(--text-dim);
-    font-size: 14px;
-    line-height: 1.9;
-    max-width: 440px;
-    margin-bottom: 40px;
-  }
-
-  .hero-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .tag {
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-size: 11px;
-    padding: 4px 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .tag.amber {
-    border-color: var(--amber-dim);
-    color: var(--amber);
-  }
-
-  /* Terminal display mockup */
-  .terminal {
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
-    padding: 0;
-    position: relative;
-    animation: flicker 8s infinite;
-  }
-
-  @keyframes flicker {
-    0%, 95%, 100% { opacity: 1; }
-    96% { opacity: 0.97; }
-    97% { opacity: 1; }
-    98% { opacity: 0.98; }
-  }
-
-  .terminal-bar {
-    background: var(--green-faint);
-    border-bottom: 1px solid var(--border);
-    padding: 8px 16px;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--text-dim);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .terminal-bar span { color: var(--amber); }
-
-  .terminal-body {
-    padding: 20px 16px;
-    font-size: 13px;
-  }
-
-  .t-row {
-    display: flex;
-    padding: 5px 8px;
-    border-radius: 1px;
-    color: var(--text-dim);
-    gap: 12px;
-  }
-
-  .t-row.selected {
-    background: var(--green-faint);
-    color: var(--green);
-  }
-
-  .t-row.playing {
-    color: var(--amber);
-  }
-
-  .t-row.folder { color: var(--text-dim); }
-
-  .t-icon { width: 14px; flex-shrink: 0; text-align: center; }
-
-  .t-name { flex: 1; }
-
-  .t-meta { color: var(--text-faint); font-size: 11px; }
-
-  .t-row.selected .t-meta { color: var(--green-dim); }
-
-  .terminal-now-playing {
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-  }
-
-  .tnp-track {
-    color: var(--amber);
-    font-size: 13px;
-    margin-bottom: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
-  .progress-bar {
-    height: 3px;
-    background: var(--green-faint);
-    margin-bottom: 6px;
-    position: relative;
-  }
-
-  .progress-fill {
-    height: 100%;
-    width: 42%;
-    background: var(--amber);
-    animation: progress-anim 12s linear infinite;
-  }
-
-  @keyframes progress-anim {
-    from { width: 42%; }
-    to { width: 100%; }
-  }
-
-  .tnp-meta {
-    font-size: 11px;
-    color: var(--text-faint);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  /* ── DIVIDER ── */
-  .section-divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0 clamp(24px, 6vw, 80px);
-  }
-
-  /* ── SECTIONS ── */
-  section {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: clamp(48px, 7vw, 96px) clamp(24px, 6vw, 80px);
-  }
-
-  .section-label {
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--amber);
-    margin-bottom: 40px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  h2 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(28px, 3.5vw, 44px);
-    font-weight: 400;
-    color: var(--green);
-    margin-bottom: 20px;
-    line-height: 1.15;
-  }
-
-  h2 em { color: var(--amber); font-style: italic; }
-
-  /* ── PHILOSOPHY ── */
-  .philosophy-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    margin-top: 48px;
-  }
-
-  .phil-item {
-    background: var(--bg);
-    padding: 32px 28px;
-    transition: background 0.2s;
-  }
-
-  .phil-item:hover { background: var(--bg-panel); }
-
-  .phil-number {
-    font-size: 11px;
-    color: var(--amber);
-    letter-spacing: 0.2em;
-    margin-bottom: 16px;
-  }
-
-  .phil-title {
-    font-size: 15px;
-    color: var(--green);
-    margin-bottom: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  .phil-body {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.8;
-  }
-
-  /* ── CONTROLS ── */
-  .controls-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: 64px;
-    align-items: start;
-    margin-top: 48px;
-  }
-
-  .knob-diagram {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .knob {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 2px solid var(--green-dim);
-    background: radial-gradient(circle at 35% 35%, #1a2e1a, #050905);
-    position: relative;
-    box-shadow: 0 0 40px rgba(0,200,0,0.08), inset 0 0 20px rgba(0,0,0,0.5);
-    flex-shrink: 0;
-  }
-
-  .knob::after {
-    content: '';
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 3px;
-    height: 16px;
-    background: var(--amber);
-    border-radius: 2px;
-  }
-
-  .knob-label {
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    text-align: center;
-  }
-
-  .control-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border: 1px solid var(--border);
-  }
-
-  .control-item {
-    display: grid;
-    grid-template-columns: 160px 1fr;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .control-item:last-child { border-bottom: none; }
-
-  .control-gesture {
-    padding: 16px 20px;
-    background: var(--bg-panel);
-    color: var(--amber);
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    border-right: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-  }
-
-  .control-action {
-    padding: 16px 20px;
-    color: var(--text-dim);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-  }
-
-  /* ── FORMATS ── */
-  .formats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    margin-top: 48px;
-  }
-
-  .format-item {
-    background: var(--bg);
-    padding: 28px 24px;
-    transition: background 0.2s;
-  }
-
-  .format-item:hover { background: var(--bg-panel); }
-
-  .format-ext {
-    font-size: 22px;
-    color: var(--green);
-    letter-spacing: 0.05em;
-    margin-bottom: 8px;
-  }
-
-  .format-name {
-    font-size: 11px;
-    color: var(--amber);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .format-desc {
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.7;
-  }
-
-  .format-badge {
-    display: inline-block;
-    font-size: 10px;
-    padding: 2px 6px;
-    border: 1px solid var(--green-dim);
-    color: var(--green-dim);
-    letter-spacing: 0.1em;
-    margin-top: 10px;
-  }
-
-  .format-badge.lossless {
-    border-color: var(--amber-dim);
-    color: var(--amber);
-  }
-
-  /* ── VIDEO ── */
-  .video-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-    margin-top: 48px;
-  }
-
-  .video-card {
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
-    overflow: hidden;
-    transition: border-color 0.2s;
-    text-decoration: none;
-    display: block;
-  }
-
-  .video-card:hover { border-color: var(--green-dim); }
-
-  .video-thumb {
-    aspect-ratio: 16/9;
-    background: var(--green-faint);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .video-thumb-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    color: var(--text-faint);
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-
-  .play-icon {
-    width: 48px;
-    height: 48px;
-    border: 1px solid var(--green-dim);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--green-dim);
-    font-size: 18px;
-  }
-
-  /* For real YouTube embeds */
-  .video-thumb iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-  }
-
-  .video-info {
-    padding: 16px 20px;
-    border-top: 1px solid var(--border);
-  }
-
-  .video-episode {
-    font-size: 10px;
-    color: var(--amber);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .video-title {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-
-  .video-card:hover .video-title { color: var(--green); }
-
-  /* Add video CTA */
-  .video-add {
-    border: 1px dashed var(--border);
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 180px;
-    color: var(--text-faint);
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    cursor: default;
-  }
-
-  .video-add-icon {
-    font-size: 28px;
-    color: var(--text-faint);
-  }
-
-  /* ── STACK ── */
-  .stack-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    margin-top: 48px;
-  }
-
-  .stack-item {
-    background: var(--bg);
-    padding: 24px 28px;
-    display: grid;
-    grid-template-columns: 100px 1fr;
-    gap: 20px;
-    align-items: start;
-  }
-
-  .stack-name {
-    color: var(--amber);
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    padding-top: 2px;
-  }
-
-  .stack-desc {
-    color: var(--text-dim);
-    font-size: 13px;
-    line-height: 1.7;
-  }
-
-  /* ── FOOTER ── */
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 32px clamp(24px, 6vw, 80px);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--text-faint);
-    font-size: 12px;
-    letter-spacing: 0.1em;
-  }
-
-  footer a {
-    color: var(--text-dim);
-    text-decoration: none;
-  }
-
-  footer a:hover { color: var(--green); }
-
-  .cursor {
-    display: inline-block;
-    width: 8px;
-    height: 14px;
-    background: var(--green);
-    vertical-align: middle;
-    animation: blink 1.1s step-end infinite;
-    margin-left: 2px;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 800px) {
-    .hero {
-      grid-template-columns: 1fr;
-      gap: 40px;
-      min-height: auto;
-    }
-    .philosophy-grid { grid-template-columns: 1fr; }
-    .controls-layout { grid-template-columns: 1fr; }
-    .formats-grid { grid-template-columns: repeat(2, 1fr); }
-    .video-grid { grid-template-columns: 1fr; }
-    .stack-list { grid-template-columns: 1fr; }
-    nav { display: none; }
-    footer { flex-direction: column; gap: 12px; text-align: center; }
-  }
-
-  /* Fade-in on load */
-  .fade-in {
-    opacity: 0;
-    transform: translateY(16px);
-    animation: fadein 0.7s ease forwards;
-  }
-
-  @keyframes fadein {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .fade-in:nth-child(1) { animation-delay: 0.1s; }
-  .fade-in:nth-child(2) { animation-delay: 0.25s; }
-  .fade-in:nth-child(3) { animation-delay: 0.4s; }
-  .fade-in:nth-child(4) { animation-delay: 0.55s; }
+    z-index: 150;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding-top: 48px; }
+  .content { padding: 36px 20px 80px; }
+}
+
+@media (max-width: 480px) {
+  .content { padding: 28px 16px 80px; }
+  .def-table td:first-child { min-width: 110px; }
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  body::after  { display: none; }
+  .topbar      { display: none; }
+  .sidebar     { display: none; }
+  .main        { margin-left: 0; }
+  .content     { max-width: none; padding: 0; }
+  body         { background: #fff; color: #000; font-size: 11pt; }
+  h2, h3       { color: #000; }
+  h2::before, h3::before { display: none; }
+  a            { color: #000; }
+  code         { background: #eee; color: #000; }
+  pre, .folder-tree { background: #f5f5f5; color: #000; border: 1px solid #ccc; }
+  .callout     { border: 1px solid #ccc; background: #f9f9f9; }
+  .callout-label { color: #333; }
+  .callout.tip { border-left: 3px solid #333; }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">Music<span>Terminal</span></div>
-  <nav>
-    <a href="#philosophy">Philosophy</a>
-    <a href="#controls">Controls</a>
-    <a href="#formats">Formats</a>
-    <a href="#progress">Progress</a>
-    <a href="#stack">Stack</a>
-  </nav>
-</header>
-
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-text">
-    <div class="eyebrow fade-in">Open source project</div>
-    <h1 class="fade-in">A music player that thinks it's <em>hi-fi equipment</em></h1>
-    <p class="hero-desc fade-in">
-      Built on a Raspberry Pi. Controlled by a single knob.
-      No apps, no streaming, no menus. Just your music,
-      the way a dedicated component should play it.
-    </p>
-    <div class="hero-tags fade-in">
-      <span class="tag amber">Raspberry Pi</span>
-      <span class="tag amber">FLAC / MP3</span>
-      <span class="tag">Python + VLC</span>
-      <span class="tag">Rotary Encoder</span>
-      <span class="tag">DAC Output</span>
-      <span class="tag">7" Display</span>
-    </div>
-  </div>
-
-  <!-- Terminal mockup -->
-  <div class="terminal fade-in">
-    <div class="terminal-bar">
-      <span>MUSIC TERMINAL</span>
-      <span>▶ PLAYING</span>
-    </div>
-    <div class="terminal-body">
-      <div class="t-row folder">
-        <span class="t-icon">▾</span>
-        <span class="t-name">John Coltrane</span>
-      </div>
-      <div class="t-row folder" style="padding-left:24px">
-        <span class="t-icon">▾</span>
-        <span class="t-name">A Love Supreme (1965)</span>
-      </div>
-      <div class="t-row playing" style="padding-left:40px">
-        <span class="t-icon">♪</span>
-        <span class="t-name">01 - Resolution.flac</span>
-        <span class="t-meta">FLAC</span>
-      </div>
-      <div class="t-row selected" style="padding-left:40px">
-        <span class="t-icon"> </span>
-        <span class="t-name">02 - Pursuance.flac</span>
-        <span class="t-meta">FLAC</span>
-      </div>
-      <div class="t-row" style="padding-left:40px">
-        <span class="t-icon"> </span>
-        <span class="t-name">03 - Psalm.flac</span>
-        <span class="t-meta">FLAC</span>
-      </div>
-      <div class="t-row folder" style="padding-left:24px">
-        <span class="t-icon">▸</span>
-        <span class="t-name">Ballads (1962)</span>
-      </div>
-      <div class="t-row folder">
-        <span class="t-icon">▸</span>
-        <span class="t-name">Miles Davis</span>
-      </div>
-    </div>
-    <div class="terminal-now-playing">
-      <div class="tnp-track">01 – Resolution · A Love Supreme<span class="cursor"></span></div>
-      <div class="progress-bar"><div class="progress-fill"></div></div>
-      <div class="tnp-meta">
-        <span>John Coltrane · 1965</span>
-        <span>2:14 / 7:04</span>
-      </div>
-    </div>
-  </div>
+<!-- ============================================================
+     MOBILE TOP BAR
+     ============================================================ -->
+<div class="topbar" id="topbar">
+  <span class="topbar-title">Music Terminal</span>
+  <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰ Menu</button>
 </div>
 
-<hr class="section-divider">
+<div class="sidebar-overlay" id="overlay"></div>
 
-<!-- PHILOSOPHY -->
-<section id="philosophy">
-  <div class="section-label">Design philosophy</div>
-  <h2>The filesystem <em>is</em> the library</h2>
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout">
 
-  <div class="philosophy-grid">
-    <div class="phil-item">
-      <div class="phil-number">01</div>
-      <div class="phil-title">No metadata library</div>
-      <div class="phil-body">Your folder structure is your organisation. No database to build, no tags to fix before playback, no import process. Plug in a drive and play.</div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar" aria-label="Site navigation">
+    <div class="sidebar-header">
+      <div class="sidebar-product">Music Terminal</div>
+      <div class="sidebar-tagline">Hi-Fi Player Documentation</div>
     </div>
-    <div class="phil-item">
-      <div class="phil-number">02</div>
-      <div class="phil-title">One control surface</div>
-      <div class="phil-body">A single rotary encoder does everything. Turn to browse. Press to play. Long press for settings. The interface disappears and the music takes over.</div>
-    </div>
-    <div class="phil-item">
-      <div class="phil-number">03</div>
-      <div class="phil-title">Appliance, not computer</div>
-      <div class="phil-body">Boots straight into the player. No desktop, no OS, no distractions. Closer in spirit to a CD player or network streamer than any software application.</div>
-    </div>
-    <div class="phil-item">
-      <div class="phil-number">04</div>
-      <div class="phil-title">State that remembers</div>
-      <div class="phil-body">Power it off, power it back on. The player resumes exactly where you left it — same position in the browser, same track loaded and ready.</div>
-    </div>
-    <div class="phil-item">
-      <div class="phil-number">05</div>
-      <div class="phil-title">Lossless first</div>
-      <div class="phil-body">FLAC, WAV, AIFF, ALAC — high-resolution formats are first-class citizens. Paired with a quality DAC the output is indistinguishable from dedicated audio hardware.</div>
-    </div>
-    <div class="phil-item">
-      <div class="phil-number">06</div>
-      <div class="phil-title">Open and hackable</div>
-      <div class="phil-body">Every behaviour is configurable in a single settings file. No hidden logic, no cloud dependency, no account required. It's yours to modify completely.</div>
-    </div>
-  </div>
-</section>
+    <nav class="sidebar-nav" aria-label="Page sections">
 
-<hr class="section-divider">
+      <div class="nav-group">
+        <div class="nav-group-label">Introduction</div>
+        <a class="nav-link" href="#welcome">Welcome</a>
+        <a class="nav-link" href="#getting-started">Getting Started</a>
+      </div>
 
-<!-- CONTROLS -->
-<section id="controls">
-  <div class="section-label">How to use it</div>
-  <h2>One knob. <em>Everything.</em></h2>
+      <div class="nav-group">
+        <div class="nav-group-label">Setup</div>
+        <a class="nav-link" href="#connecting">Connecting</a>
+        <a class="nav-link" href="#music">Your Music</a>
+      </div>
 
-  <div class="controls-layout">
-    <div class="knob-diagram">
-      <div class="knob"></div>
-      <div class="knob-label">Rotary encoder<br>+ push button</div>
-    </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Day to Day</div>
+        <a class="nav-link" href="#using">Using Music Terminal</a>
+        <a class="nav-link" href="#settings">Settings</a>
+      </div>
 
-    <ul class="control-list">
-      <li class="control-item">
-        <span class="control-gesture">Turn</span>
-        <span class="control-action">Browse folders and tracks up / down</span>
-      </li>
-      <li class="control-item">
-        <span class="control-gesture">Press</span>
-        <span class="control-action">Play or pause the selected track</span>
-      </li>
-      <li class="control-item">
-        <span class="control-gesture">Double press</span>
-        <span class="control-action">Jump back to the currently playing track in the browser</span>
-      </li>
-      <li class="control-item">
-        <span class="control-gesture">Long press</span>
-        <span class="control-action">Open the settings modal — volume, shuffle, repeat, gapless and more</span>
-      </li>
-      <li class="control-item">
-        <span class="control-gesture">Idle 60s</span>
-        <span class="control-action">Browser automatically returns to the now-playing track</span>
-      </li>
-    </ul>
-  </div>
-</section>
+      <div class="nav-group">
+        <div class="nav-group-label">Technical</div>
+        <a class="nav-link" href="#audio">Audio Output</a>
+        <a class="nav-link" href="#updates">Software Updates</a>
+      </div>
 
-<hr class="section-divider">
+      <div class="nav-group">
+        <a class="nav-link" href="#troubleshooting">Troubleshooting</a>
+      </div>
 
-<!-- FORMATS -->
-<section id="formats">
-  <div class="section-label">Supported audio formats</div>
-  <h2>High resolution, <em>no compromise</em></h2>
+    </nav>
+  </aside>
 
-  <div class="formats-grid">
-    <div class="format-item">
-      <div class="format-ext">.flac</div>
-      <div class="format-name">Free Lossless</div>
-      <div class="format-desc">Open lossless compression. The recommended format for this player.</div>
-      <div class="format-badge lossless">Lossless</div>
-    </div>
-    <div class="format-item">
-      <div class="format-ext">.wav</div>
-      <div class="format-name">Waveform Audio</div>
-      <div class="format-desc">Uncompressed PCM. Zero decode overhead, maximum compatibility.</div>
-      <div class="format-badge lossless">Lossless</div>
-    </div>
-    <div class="format-item">
-      <div class="format-ext">.aiff</div>
-      <div class="format-name">Audio Interchange</div>
-      <div class="format-desc">Apple's uncompressed format. Common in professional audio workflows.</div>
-      <div class="format-badge lossless">Lossless</div>
-    </div>
-    <div class="format-item">
-      <div class="format-ext">.alac</div>
-      <div class="format-name">Apple Lossless</div>
-      <div class="format-desc">Compressed lossless from Apple. Ideal for iTunes-sourced libraries.</div>
-      <div class="format-badge lossless">Lossless</div>
-    </div>
-    <div class="format-item">
-      <div class="format-ext">.mp3</div>
-      <div class="format-name">MPEG Audio</div>
-      <div class="format-desc">The universal lossy format. Fully supported for existing collections.</div>
-      <div class="format-badge">Lossy</div>
-    </div>
-    <div class="format-item">
-      <div class="format-ext">.ogg</div>
-      <div class="format-name">Ogg Vorbis</div>
-      <div class="format-desc">Open lossy compression. Good quality at moderate bitrates.</div>
-      <div class="format-badge">Lossy</div>
-    </div>
-    <div class="format-item" style="grid-column: span 2; background: var(--bg-panel);">
-      <div class="format-ext" style="font-size:14px; color: var(--text-dim)">Audio engine</div>
-      <div class="format-name">VLC via python-vlc</div>
-      <div class="format-desc">All formats are decoded by libVLC — the same engine used in VLC media player.</div>
-    </div>
-  </div>
-</section>
+  <!-- MAIN -->
+  <main class="main" id="main">
+  <div class="content">
 
-<hr class="section-divider">
+    <!-- ========================================================
+         WELCOME
+         ======================================================== -->
+    <section id="welcome">
+      <h2>Welcome</h2>
 
-<!-- VIDEO PROGRESS -->
-<section id="progress">
-  <div class="section-label">Development progress</div>
-  <h2>Building it <em>in public</em></h2>
+      <p>Music Terminal is a dedicated music player. It plays your music collection — from a USB drive or a home network — through your hi-fi system. That is everything it does.</p>
 
-  <div class="video-grid">
+      <p>There are no apps to install, no streaming services, no accounts, and no internet connection required during playback. Your music is stored by you and played back by this device. Nothing is rented, nothing expires, and nothing gets taken away in a future update.</p>
 
-    <!-- 
-      TO ADD A VIDEO: Replace a .video-add block with a .video-card block.
-      
-      Option A — Thumbnail link (opens YouTube):
-      <a class="video-card" href="https://youtu.be/YOUR_VIDEO_ID" target="_blank" rel="noopener">
-        <div class="video-thumb">
-          <img src="https://img.youtube.com/vi/YOUR_VIDEO_ID/mqdefault.jpg" 
-               style="width:100%;height:100%;object-fit:cover;" alt="Episode title">
+      <p>The entire interface is a single rotary knob. Turn it to scroll through your folders, press it to open or play something. A 7-inch screen shows your library on the left and the now-playing panel at the bottom. The screen is purely informational — everything is controlled by the knob.</p>
+
+      <h3>What makes it different</h3>
+
+      <p>A phone or laptop can play music, but it also does everything else. Notifications interrupt playback. Software updates restart the machine. Recommendation engines decide what plays next. The device you are reading about does none of those things.</p>
+
+      <p>Music Terminal is single-purpose hardware. It sits next to your amplifier, it is always on and ready, and it plays whatever you tell it to play until you tell it to stop. The browsing experience mirrors the way most people already organise music on a hard drive — folders, albums, tracks — without any importing, tagging, or library management required.</p>
+
+      <p>It is a tool in the older sense: designed well, does one job, gets out of the way.</p>
+
+      <div class="callout tip">
+        <span class="callout-label">First time here?</span>
+        Start with <a href="#getting-started">Getting Started</a> to power on and get your first music playing within a few minutes.
+      </div>
+    </section>
+
+    <!-- ========================================================
+         GETTING STARTED
+         ======================================================== -->
+    <section id="getting-started">
+      <h2>Getting Started</h2>
+
+      <h3>What's in the box</h3>
+      <ul class="doc-list">
+        <li>Music Terminal unit</li>
+        <li>USB-C power cable (requires a 5V / 3A USB-C power supply, not included)</li>
+        <li>Quick-start card with the web interface address and default password</li>
+      </ul>
+
+      <div class="callout note">
+        <span class="callout-label">Power supply</span>
+        Use a quality 5V / 3A USB-C supply. Phone chargers rated below 2A may cause the unit to restart under load. Any USB-C laptop or tablet charger rated at 3A or above will work.
+      </div>
+
+      <h3>Powering on</h3>
+
+      <p>Connect the USB-C cable to the port on the back of the unit and to your power supply. Music Terminal powers on automatically — there is no power switch.</p>
+
+      <p>After a few seconds you will see the splash screen (<strong>MUSIC TERMINAL</strong> in large text), followed by the main browser. At this point the browser will be empty — it will say <em>No music sources found</em> — which is normal until you add a USB drive or set up a network source.</p>
+
+      <h3>The first thing to do</h3>
+
+      <p>If you want to play music from a USB drive, you can skip the network setup entirely. Plug in a drive formatted as FAT32 or exFAT and it will appear in the browser immediately.</p>
+
+      <p>For network music sources, or to connect to your WiFi network, open a browser on any phone or laptop connected to the same network and visit:</p>
+
+      <pre><code>http://player.local</code></pre>
+
+      <p>This opens the web configuration interface. From here you can connect to WiFi, add network music sources, and manage settings. The first time you open it, you will be asked for a password — you will find it printed on the quick-start card, or you can look it up on the device itself by pressing the knob (long press) and navigating to <strong>Help → Network Music</strong>.</p>
+
+      <div class="callout tip">
+        <span class="callout-label">Quick start</span>
+        Just want to try it quickly? Plug in a USB drive with music on it. It appears in the browser within a few seconds. Turn the knob to browse, press to play.
+      </div>
+    </section>
+
+    <!-- ========================================================
+         CONNECTING
+         ======================================================== -->
+    <section id="connecting">
+      <h2>Connecting</h2>
+
+      <p>A network connection is not required for USB playback, but it enables two things: access to music stored on a home server or NAS, and the ability to receive software updates.</p>
+
+      <h3>The web interface</h3>
+
+      <p>All network configuration — WiFi, music sources, and system options — is done through a web browser on another device. Open:</p>
+
+      <pre><code>http://player.local</code></pre>
+
+      <p>This works from any phone, tablet, or laptop on your local network. The interface is straightforward: a small web page with options for sources, WiFi, and system controls.</p>
+
+      <h3>Connecting to WiFi</h3>
+
+      <p>Music Terminal can connect to your home WiFi, or you can run a cable directly from your router to the ethernet port on the back of the unit. Ethernet is more reliable and is recommended if it is convenient.</p>
+
+      <p>To set up WiFi:</p>
+      <ol class="doc-list">
+        <li>On first use, Music Terminal broadcasts its own temporary WiFi network called <code>MusicTerminal</code>. Connect to it from your phone or laptop.</li>
+        <li>Open <code>http://192.168.4.1:8080</code> in a browser. You will see the web configuration interface.</li>
+        <li>Go to the WiFi section, enter your home network name and password, and click Connect.</li>
+        <li>Music Terminal will connect to your home WiFi and the temporary network will disappear. Reconnect your phone to your home network and continue at <code>http://player.local</code>.</li>
+      </ol>
+
+      <div class="callout note">
+        <span class="callout-label">Ethernet first</span>
+        If you connect an ethernet cable on first boot, the temporary hotspot is not needed. Open <code>http://player.local</code> from any device on your network and configure WiFi from there.
+      </div>
+
+      <h3>If player.local doesn't resolve</h3>
+
+      <p>Some routers and older Android devices do not support mDNS, which is the technology behind the <code>.local</code> address. If the page does not load:</p>
+
+      <ul class="doc-list">
+        <li>Long press the knob on the device and navigate to <strong>Help → Network Music</strong>. The screen will show the current IP address of the device.</li>
+        <li>Use that IP address directly in your browser, e.g. <code>http://192.168.1.42:8080</code>.</li>
+        <li>Alternatively, check your router's device list — Music Terminal will appear as a connected device.</li>
+      </ul>
+    </section>
+
+    <!-- ========================================================
+         MUSIC
+         ======================================================== -->
+    <section id="music">
+      <h2>Your Music</h2>
+
+      <p>Music Terminal plays your own audio files. There is no cloud storage, no importing, and no metadata scraping. It reads directly from your folders, exactly as they are organised on the drive or server.</p>
+
+      <h3>USB drives</h3>
+
+      <p>Plug a USB drive into the port on the back of the unit. It appears in the browser within a couple of seconds, labelled by the drive's volume name. Unplug it and it disappears. No ejecting, no confirmation steps.</p>
+
+      <p>The drive must be formatted as FAT32 or exFAT. Most USB drives are formatted this way out of the box. NTFS (the default format for Windows drives over 32GB) is not supported — you will need to reformat the drive if it uses NTFS.</p>
+
+      <p><strong>Supported audio formats:</strong></p>
+      <ul class="doc-list bullet">
+        <li>FLAC — recommended for best quality</li>
+        <li>MP3</li>
+        <li>AAC / M4A</li>
+        <li>WAV</li>
+        <li>AIFF / AIF</li>
+        <li>ALAC (Apple Lossless)</li>
+        <li>OGG Vorbis</li>
+      </ul>
+
+      <h3>Network and NAS sources</h3>
+
+      <p>If you have a NAS (network-attached storage), a home server, or a computer with a shared folder, you can add it as a music source. Music Terminal supports both SMB shares (the standard used by Windows, macOS, and most NAS devices) and NFS exports.</p>
+
+      <p>To add a network source:</p>
+      <ol class="doc-list">
+        <li>Open <code>http://player.local</code> in a browser.</li>
+        <li>Click <strong>Add Source</strong>.</li>
+        <li>Enter a name, choose SMB or NFS, and fill in the server address and share path.</li>
+        <li>For SMB sources, enter a username and password if your share requires them.</li>
+        <li>Click <strong>Test Connection</strong> to verify, then <strong>Add</strong>.</li>
+      </ol>
+
+      <p>The source will appear in the browser alongside any connected USB drives. Network sources are mounted automatically each time the device powers on.</p>
+
+      <h3>How the browser works</h3>
+
+      <p>The file browser is a direct view of your folder structure. There is no library database, no scanning phase, and no metadata importing. When you open a folder, you see exactly what is in it.</p>
+
+      <p>This means the quality of your browsing experience depends entirely on how your music is organised. If your files are already in tidy folders it will feel natural immediately. If they are not, it is worth spending a few minutes sorting them before adding the drive.</p>
+
+      <h3>Recommended folder structure</h3>
+
+      <p>The structure that works best is simple:</p>
+
+      <div class="folder-tree">
+        <span class="dir">Music/</span><br>
+        &nbsp;&nbsp;<span class="dir">├── Artist Name/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">│&nbsp;&nbsp; ├── Album Title (2001)/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">│&nbsp;&nbsp; │&nbsp;&nbsp; ├── 01 - Track Name.flac</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">│&nbsp;&nbsp; │&nbsp;&nbsp; └── 02 - Track Name.flac</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">│&nbsp;&nbsp; └── Album Title (2005)/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">│&nbsp;&nbsp; &nbsp;&nbsp; └── ...</span><br>
+        &nbsp;&nbsp;<span class="dir">└── Another Artist/</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">&nbsp;&nbsp;&nbsp;&nbsp; └── ...</span>
+      </div>
+
+      <p>Tracks within an album are sorted alphabetically, so including the track number at the start of each filename keeps them in order. Zero-padded numbers (<code>01</code>, <code>02</code>) sort correctly for albums with ten or more tracks.</p>
+
+      <div class="callout tip">
+        <span class="callout-label">Mixed content</span>
+        Folders can contain both subfolders and audio files at the same level. Music Terminal handles this cleanly — it shows folders first, then files, both alphabetically.
+      </div>
+    </section>
+
+    <!-- ========================================================
+         USING
+         ======================================================== -->
+    <section id="using">
+      <h2>Using Music Terminal</h2>
+
+      <p>The entire device is controlled by one knob. It handles everything: navigation, selection, volume, playback transport, and menu access. Once you have used it for a few minutes it becomes intuitive.</p>
+
+      <h3>The knob</h3>
+
+      <div class="control-block">
+        <div class="control-row">
+          <div class="control-gesture">Rotate</div>
+          <div class="control-action">Scroll through folders and tracks. In the menu, move between options. In the volume control, raise or lower the volume.</div>
         </div>
-        <div class="video-info">
-          <div class="video-episode">EP. 01</div>
-          <div class="video-title">Your video title here</div>
+        <div class="control-row">
+          <div class="control-gesture">Short press</div>
+          <div class="control-action">Open or close a folder. Start playing a track (or toggle pause if that track is already playing). Confirm a menu selection.</div>
         </div>
-      </a>
-
-      Option B — Embedded player:
-      <div class="video-card">
-        <div class="video-thumb">
-          <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" 
-                  allowfullscreen></iframe>
+        <div class="control-row">
+          <div class="control-gesture">Long press</div>
+          <div class="control-action">Open the menu from browse mode. Close the menu from anywhere inside it.</div>
         </div>
-        <div class="video-info">
-          <div class="video-episode">EP. 01</div>
-          <div class="video-title">Your video title here</div>
+        <div class="control-row">
+          <div class="control-gesture">Hold + rotate</div>
+          <div class="control-action">While a track is playing, hold the knob down and rotate to skip to the next or previous track.</div>
         </div>
       </div>
-    -->
 
-    <div class="video-add">
-      <div class="video-add-icon">+</div>
-      <span>Episode 01 — coming soon</span>
-    </div>
+      <h3>Browsing your library</h3>
 
-    <div class="video-add">
-      <div class="video-add-icon">+</div>
-      <span>Episode 02 — coming soon</span>
-    </div>
+      <p>The main screen shows your music sources down the left side. Each source is a collapsible folder — press to expand it, press again to close it. Inside you will find your folder structure exactly as it is on the drive.</p>
 
-  </div>
-</section>
+      <p>The currently playing track is highlighted in amber. If you have browsed away from it, you can jump back: open the menu with a long press, select <strong>Home</strong>, and the browser will scroll to the playing track and reveal it in its folder.</p>
 
-<hr class="section-divider">
+      <p>Long file and folder names scroll horizontally when selected, so nothing is truncated.</p>
 
-<!-- STACK -->
-<section id="stack">
-  <div class="section-label">Technical stack</div>
-  <h2>Built on <em>proven tools</em></h2>
+      <h3>Playing music</h3>
 
-  <div class="stack-list">
-    <div class="stack-item">
-      <span class="stack-name">Python</span>
-      <span class="stack-desc">Core application logic, event loop, UI orchestration, and all playback control.</span>
-    </div>
-    <div class="stack-item">
-      <span class="stack-name">Pygame</span>
-      <span class="stack-desc">Display rendering and keyboard/encoder input handling at 30 FPS.</span>
-    </div>
-    <div class="stack-item">
-      <span class="stack-name">VLC</span>
-      <span class="stack-desc">Audio engine via python-vlc. Handles all format decoding, gapless transitions, and volume control.</span>
-    </div>
-    <div class="stack-item">
-      <span class="stack-name">Mutagen</span>
-      <span class="stack-desc">Metadata extraction across all formats — ID3, Vorbis comments, and iTunes/MP4 tags.</span>
-    </div>
-    <div class="stack-item">
-      <span class="stack-name">Raspberry Pi</span>
-      <span class="stack-desc">Target hardware. Runs headless with a 7" display, rotary encoder, and external DAC.</span>
-    </div>
-    <div class="stack-item">
-      <span class="stack-name">DAC</span>
-      <span class="stack-desc">External digital-to-analogue converter for high-quality audio output, bypassing the Pi's onboard audio.</span>
-    </div>
-  </div>
-</section>
+      <p>Navigate to a track and press the knob. Playback starts immediately. The now-playing panel appears at the bottom of the screen showing the track name, a progress bar, and elapsed time.</p>
 
-<footer>
-  <span>Music Terminal — a dedicated hi-fi music player</span>
-  <span>Built with Python · Powered by VLC · Running on Raspberry Pi</span>
-</footer>
+      <p>When you play a track, Music Terminal automatically builds a playlist from the other tracks in the same folder, in order. When the track finishes it will play the next one (if AutoNext is on), continuing through the folder.</p>
+
+      <p>Pressing the knob on a track that is already playing toggles pause and resume.</p>
+
+      <h3>Queue</h3>
+
+      <p>The queue lets you line up specific tracks to play next, regardless of what is in the main playlist. Queued tracks play one by one, after the current track and before the playlist resumes.</p>
+
+      <p>To add something to the queue:</p>
+      <ul class="doc-list">
+        <li>Navigate to a track or folder in the browser.</li>
+        <li>Long press to open the menu, then select <strong>Queue</strong>.</li>
+        <li>Choose <strong>Add Track</strong> to add the highlighted track, or <strong>Add Folder</strong> to add all tracks in the highlighted folder.</li>
+      </ul>
+
+      <p>The queue appears as a virtual folder called <strong>QUEUE (n)</strong> at the top of the browser, where <em>n</em> is the number of tracks waiting. You can open it to see what is in it. Tracks with a <code>[Q]</code> marker in the browser are queued.</p>
+
+      <p>To clear the queue, open the menu, go to <strong>Queue</strong>, and select <strong>Clear Queue</strong>.</p>
+
+      <h3>Favourites</h3>
+
+      <p>Mark any track or folder as a favourite to make it easy to find again. Favourited items appear with a heart symbol <strong>♥</strong> next to them in the browser. All your favourites are also collected into a <strong>FAVOURITES</strong> virtual folder at the top of the browser.</p>
+
+      <p>To add or remove a favourite, navigate to the item, open the menu, select <strong>Favourites</strong>, and choose <strong>Add Track</strong>, <strong>Add Folder</strong>, or <strong>Remove</strong>.</p>
+
+      <p>Favouriting a folder automatically marks everything inside it, including subfolders. This makes it easy to favourite an entire artist or album without adding individual tracks.</p>
+
+      <h3>The now-playing panel</h3>
+
+      <p>The bar at the bottom of the screen shows what is currently playing. It includes:</p>
+      <ul class="doc-list bullet">
+        <li>The track name, with <strong>PLAYING</strong> or <strong>PAUSED</strong> status</li>
+        <li>Elapsed and total time</li>
+        <li>A progress bar</li>
+        <li>A scrolling metadata ticker</li>
+      </ul>
+
+      <h3>The metadata ticker</h3>
+
+      <p>The ticker is a scrolling line at the very bottom of the screen that shows information pulled from the audio file's embedded tags — by default, album name, year, and album artist. You can configure which fields appear in <strong>Settings → Ticker Fields</strong>.</p>
+
+      <p>If a file has no embedded tags the ticker will be blank for that track, which is normal. The player works fine with or without tags.</p>
+
+      <h3>Screensaver</h3>
+
+      <p>After a period of inactivity, the screen dims automatically. Rotate or press the knob to wake it. The screensaver does not affect playback — music continues while the screen is dimmed.</p>
+
+      <p>The timeout can be adjusted or turned off in <strong>Settings → Screensaver</strong>.</p>
+    </section>
+
+    <!-- ========================================================
+         SETTINGS
+         ======================================================== -->
+    <section id="settings">
+      <h2>Settings</h2>
+
+      <p>All settings are accessed by pressing and holding the knob (long press) from the browse screen. Navigate the menu with the knob, press to select, long press to close and return to browsing.</p>
+
+      <h3>Main menu items</h3>
+
+      <table class="def-table">
+        <tr>
+          <td>Volume</td>
+          <td>Adjust playback volume. After selecting, turn the knob to raise or lower it. Press to confirm and return to the menu.</td>
+        </tr>
+        <tr>
+          <td>Favourites</td>
+          <td>Add or remove the currently highlighted browser item from your favourites. If the item is already a favourite, you will see a Remove option. If the queue contains items, you can also clear the whole list here.</td>
+        </tr>
+        <tr>
+          <td>Queue</td>
+          <td>Add the currently highlighted track or folder to the playback queue, remove it if it is already queued, or clear the entire queue. Queued tracks play immediately after the current track.</td>
+        </tr>
+        <tr>
+          <td>AutoNext</td>
+          <td>When <strong>On</strong>, playback continues automatically to the next track in the folder when the current one ends. When <strong>Off</strong>, playback stops at the end of each track. Toggle by pressing.</td>
+        </tr>
+        <tr>
+          <td>Shuffle</td>
+          <td>When <strong>On</strong>, tracks in the current folder play in a random order. Toggle by pressing. The shuffle is applied immediately to the current playlist if a track is already playing.</td>
+        </tr>
+        <tr>
+          <td>Repeat</td>
+          <td>Cycles through three modes: <strong>Off</strong> (plays through once and stops), <strong>File</strong> (loops the current track indefinitely), and <strong>Folder</strong> (loops through all tracks in the folder).</td>
+        </tr>
+      </table>
+
+      <h3>Settings submenu</h3>
+
+      <p>Select <strong>Settings</strong> from the main menu to access device configuration:</p>
+
+      <table class="def-table">
+        <tr>
+          <td>Encoder Direction</td>
+          <td>Reverses the scroll direction of the knob. If rotating clockwise moves the cursor up when you expect it to move down, switch this to <strong>Reversed</strong>.</td>
+        </tr>
+        <tr>
+          <td>Screensaver</td>
+          <td>Sets how long the screen stays fully bright during inactivity. Cycles through: <strong>Off</strong>, <strong>1 min</strong>, <strong>5 min</strong>, <strong>10 min</strong>, <strong>30 min</strong>, <strong>1 hour</strong>. Playback is unaffected while the screen is dimmed.</td>
+        </tr>
+        <tr>
+          <td>Ticker</td>
+          <td>Turns the scrolling metadata line in the now-playing panel on or off.</td>
+        </tr>
+        <tr>
+          <td>Ticker Fields</td>
+          <td>Choose which metadata fields appear in the ticker. Available fields: <strong>album</strong>, <strong>albumartist</strong>, <strong>artist</strong>, <strong>date</strong>, <strong>genre</strong>. Toggle each one individually. Fields are read from the embedded tags in each audio file.</td>
+        </tr>
+        <tr>
+          <td>Software Update</td>
+          <td>Downloads and installs the latest software over your network connection. See <a href="#updates">Software Updates</a> for full details.</td>
+        </tr>
+      </table>
+
+      <h3>Navigation and system</h3>
+
+      <table class="def-table">
+        <tr>
+          <td>Home</td>
+          <td>Returns the file browser to the currently playing track, expanding the folder that contains it and scrolling to highlight it. If a track is playing you will be asked whether to keep it playing or stop. If nothing is playing, the browser resets to the top level immediately.</td>
+        </tr>
+        <tr>
+          <td>Restart</td>
+          <td>Restarts the player software. Useful if something is not behaving as expected. State (volume, shuffle, last track) is saved before restarting.</td>
+        </tr>
+        <tr>
+          <td>Shutdown</td>
+          <td>Powers the device off safely. Always use this rather than pulling the power cable — a clean shutdown avoids any risk of file system corruption on the storage card.</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- ========================================================
+         AUDIO
+         ======================================================== -->
+    <section id="audio">
+      <h2>Audio Output</h2>
+
+      <p>Music Terminal has two ways to output audio. Which one you use depends on the model you have and how you want to connect it to your hi-fi.</p>
+
+      <h3>3.5mm headphone jack</h3>
+
+      <p>The 3.5mm jack on the back of the unit provides a standard stereo analogue output. Connect it to an amplifier's AUX or line-level input using a 3.5mm to RCA cable (very commonly available), or to an active speaker with a 3.5mm input.</p>
+
+      <p>The jack output is perfectly usable and will sound good through most systems. It is the right choice if you want simplicity, if your amplifier's inputs are already RCA, or if you are connecting to a speaker with a standard aux input.</p>
+
+      <div class="callout note">
+        <span class="callout-label">Line level</span>
+        Connect to a line-level or AUX input on your amplifier — not a phono input. A phono input is designed for a turntable's signal level and will sound wrong with this output.
+      </div>
+
+      <h3>DAC HAT (Hi-Fi output board)</h3>
+
+      <p>Some versions of Music Terminal include a DAC HAT — a dedicated audio board fitted inside the case. DAC stands for Digital-to-Analogue Converter: it is the component that turns the digital audio data into an analogue signal your amplifier can work with.</p>
+
+      <p>The built-in DAC HAT uses a higher-quality audio chip than the standard output, with a lower noise floor and better channel separation. For most listeners on a decent hi-fi system, the difference is clearly audible — a cleaner, quieter background and slightly more detail.</p>
+
+      <p>DAC HAT models include the <strong>HiFiBerry DAC+</strong> and the <strong>HiFiBerry DAC2 Pro</strong>. The DAC outputs via RCA sockets on the back panel, bypassing the 3.5mm jack entirely. Connect RCA-to-RCA cables from the output sockets to your amplifier's line input.</p>
+
+      <h3>Recommended connections</h3>
+
+      <table class="def-table">
+        <tr>
+          <td>Integrated amplifier</td>
+          <td>Connect to any free AUX or CD input using RCA cables (DAC HAT) or a 3.5mm-to-RCA cable (jack). Avoid the PHONO input.</td>
+        </tr>
+        <tr>
+          <td>Active speakers</td>
+          <td>Most active speakers accept RCA or 3.5mm. Connect directly — no amplifier needed.</td>
+        </tr>
+        <tr>
+          <td>AV receiver</td>
+          <td>Any free analogue input works. If the receiver has a dedicated CD or SACD input, use that — it is usually routed through a higher-quality internal path.</td>
+        </tr>
+      </table>
+
+      <h3>Audio formats and quality</h3>
+
+      <p>Music Terminal plays all common audio formats, but not all formats are equal in quality.</p>
+
+      <p><strong>FLAC</strong> is lossless — every bit of the original recording is preserved. It is the recommended format if quality matters to you. FLAC files are typically 3–5× larger than MP3 files but storage is cheap.</p>
+
+      <p><strong>ALAC</strong> is Apple's lossless format and is equally good quality. Use it if your existing rips are already in ALAC.</p>
+
+      <p><strong>MP3 and AAC</strong> use compression that permanently removes some audio data to reduce file size. At high bitrates (320kbps MP3 or 256kbps AAC) the difference from lossless is very small and most people cannot hear it in a casual listen. At lower bitrates the quality loss is more noticeable.</p>
+
+      <p><strong>WAV and AIFF</strong> are lossless like FLAC but do not support embedded tags, so the ticker will not display metadata for those files. FLAC is generally preferred over WAV for this reason.</p>
+    </section>
+
+    <!-- ========================================================
+         UPDATES
+         ======================================================== -->
+    <section id="updates">
+      <h2>Software Updates</h2>
+
+      <p>Music Terminal can update itself over your network connection. Updates are released periodically and may include bug fixes, new features, or improvements to playback quality.</p>
+
+      <h3>How to update</h3>
+
+      <ol class="doc-list">
+        <li>Make sure Music Terminal is connected to the internet (WiFi or ethernet).</li>
+        <li>Long press the knob to open the menu.</li>
+        <li>Select <strong>Settings</strong>, then <strong>Software Update</strong>.</li>
+        <li>You will see the current installed version. Select <strong>Yes</strong> to proceed.</li>
+        <li>The screen will show <strong>Updating… please wait</strong>. Do not unplug the device.</li>
+        <li>After one to two minutes, the player will restart automatically with the new version installed.</li>
+      </ol>
+
+      <div class="callout note">
+        <span class="callout-label">During update</span>
+        Playback stops when an update begins. The update itself takes about a minute, followed by an automatic restart. The whole process from confirmation to being back at the browse screen is usually under two minutes on a reasonable home connection.
+      </div>
+
+      <h3>If the update fails</h3>
+
+      <p>If the player does not restart on its own after three minutes, or restarts into a state where things are not working correctly:</p>
+
+      <ul class="doc-list">
+        <li>Check your network connection is working from another device.</li>
+        <li>Try the update again — a brief network interruption during download is the most common cause of failure, and the process is safe to retry.</li>
+        <li>If repeated attempts fail, check the <a href="#troubleshooting">Troubleshooting</a> section or contact support.</li>
+      </ul>
+
+      <p>Updates never erase your music or change your saved sources. Volume, playback settings, favourites, and network configuration are all preserved across updates.</p>
+    </section>
+
+    <!-- ========================================================
+         TROUBLESHOOTING
+         ======================================================== -->
+    <section id="troubleshooting">
+      <h2>Troubleshooting</h2>
+
+      <h3>No sound</h3>
+      <ul class="doc-list">
+        <li>Check the cable between Music Terminal and your amplifier or speaker is properly seated at both ends.</li>
+        <li>Check the amplifier is switched on and set to the correct input — it should match whichever socket you have connected to.</li>
+        <li>Open the menu on Music Terminal and check the volume level is not at zero. It is shown in the top-left of the status bar.</li>
+        <li>Make sure a track is actually playing (the status bar will say <strong>PLAYING</strong> or <strong>PAUSED</strong>).</li>
+        <li>If you are using a DAC HAT model, make sure you are connected to the RCA sockets on the back panel, not the 3.5mm jack — they are separate outputs.</li>
+      </ul>
+
+      <h3>USB drive not detected</h3>
+      <ul class="doc-list">
+        <li>Unplug and re-plug the drive. Wait a couple of seconds for it to appear.</li>
+        <li>Check the drive is formatted as FAT32 or exFAT, not NTFS. You can check and reformat this from a Windows PC (right-click the drive in File Explorer → Format) or on a Mac (Disk Utility → Erase).</li>
+        <li>Try a different USB port if the unit has more than one.</li>
+        <li>Test the drive on a computer to confirm it is working and contains audio files in a supported format.</li>
+      </ul>
+
+      <h3>NAS or network source not appearing</h3>
+      <ul class="doc-list">
+        <li>Confirm the NAS is powered on and reachable from other devices on your network.</li>
+        <li>Check that file sharing is enabled on the NAS for the share you are trying to add. On most NAS devices this is in the shared folder settings.</li>
+        <li>If you added the source with a username and password, double-check those credentials are correct via the web interface at <code>http://player.local</code>.</li>
+        <li>For SMB sources, try using the NAS's IP address instead of its hostname when adding the source.</li>
+        <li>Remove the source via the web interface and add it again if it was previously working but has stopped appearing.</li>
+      </ul>
+
+      <h3>Screen is blank or very dim</h3>
+      <ul class="doc-list">
+        <li>This is the screensaver. Turn or press the knob to wake the screen. Playback continues unaffected while the screen is dimmed.</li>
+        <li>To extend the screensaver timeout or disable it, open the menu (long press) → Settings → Screensaver.</li>
+      </ul>
+
+      <h3>Web interface not loading</h3>
+      <ul class="doc-list">
+        <li>Make sure the device you are browsing from is on the same WiFi or ethernet network as Music Terminal.</li>
+        <li>Try the IP address directly instead of <code>player.local</code>. You can find the IP address by opening the menu and going to <strong>Help → Network Music</strong>.</li>
+        <li>If Music Terminal is connected via ethernet, try accessing it from a device that is also connected by cable or on the same router.</li>
+        <li>Restart Music Terminal (menu → Restart) and try again.</li>
+      </ul>
+
+      <h3>Playback stops mid-track</h3>
+      <ul class="doc-list">
+        <li>For USB playback: check the cable and connector — a loose USB connection can cause the drive to briefly disconnect.</li>
+        <li>For network playback: a drop in your home network can interrupt streaming. Check your router and network source are stable.</li>
+        <li>If the issue repeats on a specific file, the file itself may be damaged. Test it by playing it on a computer.</li>
+      </ul>
+
+      <h3>Player won't start or is stuck on the splash screen</h3>
+      <ul class="doc-list">
+        <li>Unplug the power cable, wait ten seconds, and plug it back in.</li>
+        <li>If the screen stays blank, check the power supply is providing enough current — use a supply rated at 3A or above.</li>
+        <li>If the device restarts to the splash screen but gets no further, check whether a USB drive plugged in during boot might be causing a delay. Try removing it and restarting.</li>
+      </ul>
+
+      <h3>Advanced: checking the log</h3>
+
+      <p>If you are comfortable with a terminal and want to dig deeper, you can read the player's log file over SSH. This is entirely optional and not required for normal troubleshooting.</p>
+
+      <pre>ssh jon@player.local
+tail -100 ~/music_player/player.log</pre>
+
+      <p>The log contains startup messages, playback events, and any error output. If you are contacting support, including the last 50 lines of this log is very helpful.</p>
+
+      <div class="callout tip">
+        <span class="callout-label">Still stuck?</span>
+        If none of the above resolves your issue, contact support with a description of what you have tried and, if possible, the log output from the steps above.
+      </div>
+    </section>
+
+  </div><!-- /content -->
+  </main>
+
+</div><!-- /layout -->
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+  (function () {
+
+    /* ── Hamburger / sidebar toggle ─────────────────────────── */
+    const hamburger = document.getElementById('hamburger');
+    const sidebar   = document.getElementById('sidebar');
+    const overlay   = document.getElementById('overlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('visible');
+      hamburger.textContent = '✕ Close';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('visible');
+      hamburger.textContent = '☰ Menu';
+    }
+
+    hamburger.addEventListener('click', function () {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
+    /* Close sidebar when a nav link is tapped on mobile */
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 760) closeSidebar();
+      });
+    });
+
+    /* ── IntersectionObserver: active nav link ───────────────── */
+    const sections  = document.querySelectorAll('section[id]');
+    const navLinks  = document.querySelectorAll('.nav-link');
+
+    function setActive(id) {
+      navLinks.forEach(function (link) {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+
+    /* Initialise with the first section */
+    if (sections.length > 0) setActive(sections[0].id);
+
+    /* rootMargin: trigger when a section enters the top 30% of the viewport */
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) setActive(entry.target.id);
+      });
+    }, {
+      rootMargin: '-10% 0px -65% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(function (s) { observer.observe(s); });
+
+  }());
+</script>
 
 </body>
 </html>
